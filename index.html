@@ -143,7 +143,7 @@ const db = getFirestore(app);
 
 const ANALISTAS=['Alicia Castillo','Arianny Santos','Crismel Jean-Baptiste','Geovanna Silie','John Ortiz','Mario Peña','Mercedes Jimenez','Nicauly Rincon','Olga Martinez','Rikenny Encarnacion','Warda Simo'];
 const VICES=['VICEMINISTERIO ADMINISTRATIVO, TÉCNICO Y FINANCIERO','VICE-MINISTERIO DE PRODUCCIÓN AGRÍCOLA Y MERCADEO','VICEMINISTERIO DE EXTENSIÓN Y CAPACITACIÓN AGROPECUARIA','VICE-MINISTERIO DE DESARROLLO RURAL AGROPECUARIO','DESPACHO DEL MINISTRO','VICEMINISTERIO DE PLANIFICACION Y DESARROLLO'];
-const ESTATUS_ELAB=['EN ELABORACION','DEVUELTO','DESIERTO'];
+const ESTATUS_ELAB=['EN ELABORACION','DEVUELTO','DESIERTO','PUBLICADO'];
 const ESTATUS_ACT=['EN RECEPCION DE OFERTAS','EVALUACION DE OFERTAS','ADJUDICADO','EN EJECUCION'];
 const MODALIDADES=['CONTRATACION MENOR','CONTRATACION DIRECTA SUJETA AL UMBRAL','PROVEEDOR UNICO','CONTRATACION SIMPLIFICADA','LICITACION PUBLICA','LICITACION RESTRINGIDA'];
 const TIPOS_COMPRA=['OPERACIONAL','MISIONAL'];
@@ -426,8 +426,20 @@ window.saveProc=async function(){
       else await addDoc(collection(db,'activos'),{...datos,createdAt:serverTimestamp()});
     } else {
       const datos={...base,tipoCompra:document.getElementById('fTipo').value};
-      if(editId) await updateDoc(doc(db,'elaboracion',editId),datos);
-      else await addDoc(collection(db,'elaboracion'),{...datos,createdAt:serverTimestamp()});
+      if(datos.estatus==='PUBLICADO'){
+        // Mover a activos automáticamente
+        const datosActivo={...datos,
+          modalidad:'',fechaPub:'',contrato:'NO',
+          inicioContrato:'',finContrato:'',proveedores:[],
+          movidoDeElaboracion:true,createdAt:serverTimestamp()
+        };
+        await addDoc(collection(db,'activos'),datosActivo);
+        if(editId) await deleteDoc(doc(db,'elaboracion',editId));
+        showToast('Proceso publicado y movido a Activos ✓');
+      } else {
+        if(editId) await updateDoc(doc(db,'elaboracion',editId),datos);
+        else await addDoc(collection(db,'elaboracion'),{...datos,createdAt:serverTimestamp()});
+      }
     }
     closeModal();
     showToast(editId?'Proceso actualizado ✓':'Proceso creado ✓');
