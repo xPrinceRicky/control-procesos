@@ -4,73 +4,77 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Control de Procesos — Ministerio de Agricultura</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
-  *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f5f5;color:#1a1a1a;font-size:13px}
-  .topbar{background:#fff;border-bottom:1px solid #e0e0e0;padding:12px 20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;position:sticky;top:0;z-index:10}
-  .topbar-left h1{font-size:16px;font-weight:600;color:#1a1a1a}
-  .topbar-left span{font-size:11px;color:#888}
-  .main{padding:16px 20px}
-  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:16px}
-  .kpi{background:#fff;border:1px solid #e8e8e8;border-radius:10px;padding:12px;text-align:center}
-  .kpi-label{font-size:11px;color:#888;margin-bottom:4px}
-  .kpi-val{font-size:22px;font-weight:600}
-  .kpi-val.v{color:#1a9e6e}.kpi-val.r{color:#d94040}.kpi-val.g{color:#888}.kpi-val.b{color:#1a5fba}
-  .card{background:#fff;border:1px solid #e8e8e8;border-radius:10px;overflow:hidden;margin-bottom:16px}
-  .tabs{display:flex;border-bottom:1px solid #e8e8e8;background:#fafafa}
-  .tab{font-size:13px;padding:10px 20px;cursor:pointer;color:#888;border-bottom:2px solid transparent;font-weight:500}
-  .tab.active{color:#1a1a1a;border-bottom-color:#1a5fba;background:#fff}
-  .toolbar{display:flex;gap:8px;flex-wrap:wrap;padding:12px 16px;align-items:center;border-bottom:1px solid #f0f0f0}
-  .toolbar input,.toolbar select{font-size:12px;padding:6px 10px;border-radius:7px;border:1px solid #ddd;background:#fff;color:#1a1a1a;outline:none}
-  .toolbar input{flex:1;min-width:160px}
-  .toolbar input:focus,.toolbar select:focus{border-color:#1a5fba}
-  .btn{font-size:12px;padding:6px 14px;border-radius:7px;border:1px solid #ddd;background:#fff;color:#1a1a1a;cursor:pointer;display:inline-flex;align-items:center;gap:5px;font-weight:500;transition:background 0.15s}
-  .btn:hover{background:#f5f5f5}
-  .btn.primary{background:#1a5fba;color:#fff;border-color:#1a5fba}
-  .btn.primary:hover{background:#154fa0}
-  .btn.danger{color:#d94040;border-color:#f5c0c0}
-  .btn.danger:hover{background:#fff5f5}
-  .btn.sm{padding:4px 8px;font-size:11px}
-  .tbl-wrap{overflow-x:auto}
-  table{width:100%;border-collapse:collapse;min-width:800px}
-  th{padding:9px 12px;text-align:left;font-weight:600;font-size:11px;color:#888;background:#fafafa;border-bottom:1px solid #eee;white-space:nowrap;text-transform:uppercase;letter-spacing:0.03em}
-  td{padding:9px 12px;border-bottom:1px solid #f0f0f0;vertical-align:top}
-  tr:last-child td{border-bottom:none}
-  tr:hover td{background:#fafeff}
-  .dot{display:inline-block;width:9px;height:9px;border-radius:50%;flex-shrink:0;margin-top:2px}
-  .dot-v{background:#1a9e6e}.dot-r{background:#d94040}.dot-g{background:#bbb}
-  .badge{display:inline-block;font-size:10px;padding:2px 8px;border-radius:20px;font-weight:600;white-space:nowrap}
-  .be{background:#ddeeff;color:#0a4080}
-  .bd{background:#ffe0e0;color:#8b0000}
-  .bds{background:#efefef;color:#555}
-  .bro{background:#e8f5e9;color:#1b5e20}
-  .bev{background:#ede7f6;color:#4527a0}
-  .badj{background:#e8f5e9;color:#1b5e20}
-  .bej{background:#e3f2fd;color:#0d47a1}
-  .prov-list{display:flex;flex-direction:column;gap:2px}
-  .prov-item{font-size:11px;color:#555;padding:1px 0}
-  .empty{text-align:center;padding:3rem;color:#aaa;font-size:13px}
-  .loading{text-align:center;padding:2rem;color:#888;font-size:13px}
-  /* TOAST */
-  .toast{position:fixed;bottom:24px;right:24px;background:#1a1a1a;color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;z-index:999;opacity:0;transition:opacity 0.3s;pointer-events:none}
-  .toast.show{opacity:1}
-  /* MODAL */
-  .mbg{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:100;align-items:flex-start;justify-content:center;padding:40px 16px;overflow-y:auto}
-  .mbg.open{display:flex}
-  .modal{background:#fff;border-radius:12px;border:1px solid #e0e0e0;padding:20px;width:620px;max-width:100%;margin:auto}
-  .modal h2{font-size:15px;font-weight:600;margin-bottom:16px;color:#1a1a1a}
-  .fgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-  .fg{display:flex;flex-direction:column;gap:4px}
-  .fg.full{grid-column:1/-1}
-  .fg label{font-size:11px;color:#888;font-weight:500}
-  .fg input,.fg select,.fg textarea{font-size:12px;padding:7px 10px;border-radius:7px;border:1px solid #ddd;background:#fff;color:#1a1a1a;outline:none}
-  .fg input:focus,.fg select:focus,.fg textarea:focus{border-color:#1a5fba}
-  .fg textarea{resize:vertical;min-height:56px}
-  .sec-hdr{font-size:10px;font-weight:700;color:#aaa;margin:4px 0 0;grid-column:1/-1;border-top:1px solid #f0f0f0;padding-top:12px;text-transform:uppercase;letter-spacing:0.06em}
-  .mfooter{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
-  .prov-entry{display:flex;gap:6px;align-items:center;margin-bottom:5px}
-  .prov-entry input{flex:1}
-  .status-bar{font-size:11px;color:#888;padding:6px 16px;background:#fafafa;border-top:1px solid #f0f0f0}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f5f5;color:#1a1a1a;font-size:13px}
+.topbar{background:#fff;border-bottom:1px solid #e0e0e0;padding:12px 20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;position:sticky;top:0;z-index:10}
+.topbar-left h1{font-size:16px;font-weight:600;color:#1a1a1a}
+.topbar-left span{font-size:11px;color:#888}
+.main{padding:16px 20px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:16px}
+.kpi{background:#fff;border:1px solid #e8e8e8;border-radius:10px;padding:12px;text-align:center}
+.kpi-label{font-size:11px;color:#888;margin-bottom:4px}
+.kpi-val{font-size:22px;font-weight:600}
+.kpi-val.v{color:#1a9e6e}.kpi-val.r{color:#d94040}.kpi-val.g{color:#888}.kpi-val.b{color:#1a5fba}
+.card{background:#fff;border:1px solid #e8e8e8;border-radius:10px;overflow:hidden;margin-bottom:16px}
+.tabs{display:flex;border-bottom:1px solid #e8e8e8;background:#fafafa}
+.tab{font-size:13px;padding:10px 20px;cursor:pointer;color:#888;border-bottom:2px solid transparent;font-weight:500}
+.tab.active{color:#1a1a1a;border-bottom-color:#1a5fba;background:#fff}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;padding:12px 16px;align-items:center;border-bottom:1px solid #f0f0f0}
+.toolbar input,.toolbar select{font-size:12px;padding:6px 10px;border-radius:7px;border:1px solid #ddd;background:#fff;color:#1a1a1a;outline:none}
+.toolbar input{flex:1;min-width:160px}
+.toolbar input:focus,.toolbar select:focus{border-color:#1a5fba}
+.toolbar2{display:flex;gap:8px;flex-wrap:wrap;padding:8px 16px;align-items:center;border-bottom:1px solid #f0f0f0;background:#fafafa}
+.btn{font-size:12px;padding:6px 14px;border-radius:7px;border:1px solid #ddd;background:#fff;color:#1a1a1a;cursor:pointer;display:inline-flex;align-items:center;gap:5px;font-weight:500;transition:background 0.15s}
+.btn:hover{background:#f5f5f5}
+.btn.primary{background:#1a5fba;color:#fff;border-color:#1a5fba}
+.btn.primary:hover{background:#154fa0}
+.btn.success{background:#1a9e6e;color:#fff;border-color:#1a9e6e}
+.btn.success:hover{background:#157a55}
+.btn.danger{color:#d94040;border-color:#f5c0c0}
+.btn.danger:hover{background:#fff5f5}
+.btn.sm{padding:4px 8px;font-size:11px}
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;min-width:800px}
+th{padding:9px 12px;text-align:left;font-weight:600;font-size:11px;color:#888;background:#fafafa;border-bottom:1px solid #eee;white-space:nowrap;text-transform:uppercase;letter-spacing:0.03em}
+td{padding:9px 12px;border-bottom:1px solid #f0f0f0;vertical-align:top}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#fafeff}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;flex-shrink:0;margin-top:2px}
+.dot-v{background:#1a9e6e}.dot-r{background:#d94040}.dot-g{background:#bbb}.dot-b{background:#1a5fba}
+.badge{display:inline-block;font-size:10px;padding:2px 8px;border-radius:20px;font-weight:600;white-space:nowrap}
+.be{background:#ddeeff;color:#0a4080}
+.bd{background:#ffe0e0;color:#8b0000}
+.bds{background:#efefef;color:#555}
+.bpub{background:#e8f5e9;color:#1b5e20}
+.bro{background:#e8f5e9;color:#1b5e20}
+.bev{background:#ede7f6;color:#4527a0}
+.badj{background:#e3f2fd;color:#0d47a1}
+.bej{background:#e8f5e9;color:#1b5e20}
+.prov-list{display:flex;flex-direction:column;gap:2px}
+.prov-item{font-size:11px;color:#555;padding:1px 0}
+.empty{text-align:center;padding:3rem;color:#aaa;font-size:13px}
+.loading{text-align:center;padding:2rem;color:#888;font-size:13px}
+.toast{position:fixed;bottom:24px;right:24px;background:#1a1a1a;color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;z-index:999;opacity:0;transition:opacity 0.3s;pointer-events:none}
+.toast.show{opacity:1}
+.mbg{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:100;align-items:flex-start;justify-content:center;padding:40px 16px;overflow-y:auto}
+.mbg.open{display:flex}
+.modal{background:#fff;border-radius:12px;border:1px solid #e0e0e0;padding:20px;width:640px;max-width:100%;margin:auto}
+.modal h2{font-size:15px;font-weight:600;margin-bottom:16px;color:#1a1a1a}
+.fgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.fg{display:flex;flex-direction:column;gap:4px}
+.fg.full{grid-column:1/-1}
+.fg label{font-size:11px;color:#888;font-weight:500}
+.fg input,.fg select,.fg textarea{font-size:12px;padding:7px 10px;border-radius:7px;border:1px solid #ddd;background:#fff;color:#1a1a1a;outline:none}
+.fg input:focus,.fg select:focus,.fg textarea:focus{border-color:#1a5fba}
+.fg textarea{resize:vertical;min-height:56px}
+.sec-hdr{font-size:10px;font-weight:700;color:#aaa;margin:4px 0 0;grid-column:1/-1;border-top:1px solid #f0f0f0;padding-top:12px;text-transform:uppercase;letter-spacing:0.06em}
+.mfooter{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
+.prov-entry{display:flex;gap:6px;align-items:center;margin-bottom:5px}
+.prov-entry input{flex:1;font-size:12px;padding:7px 10px;border-radius:7px;border:1px solid #ddd}
+.status-bar{font-size:11px;color:#888;padding:6px 16px;background:#fafafa;border-top:1px solid #f0f0f0}
+.pub-alert{background:#e8f5e9;border:1px solid #a5d6a7;border-radius:8px;padding:10px 14px;font-size:12px;color:#1b5e20;grid-column:1/-1;display:none}
 </style>
 </head>
 <body>
@@ -96,12 +100,27 @@
       <div class="tab active" onclick="switchTab('elaboracion',this)">En elaboración</div>
       <div class="tab" onclick="switchTab('activos',this)">Procesos activos</div>
     </div>
+
+    <!-- Filtros principales -->
     <div class="toolbar">
       <input type="text" id="buscar" placeholder="Buscar oficio, nombre o área..." oninput="render()">
       <select id="fAnalista" onchange="render()"><option value="">Todos los analistas</option></select>
       <select id="fVice" onchange="render()"><option value="">Todos los viceministerios</option></select>
       <select id="fEstatus" onchange="render()"><option value="">Todos los estatus</option></select>
     </div>
+
+    <!-- Filtros adicionales Fase 1 -->
+    <div class="toolbar2">
+      <span style="font-size:11px;color:#aaa;font-weight:500">Filtros adicionales:</span>
+      <select id="fTipo" onchange="render()"><option value="">Tipo de compra</option><option>OPERACIONAL</option><option>MISIONAL</option></select>
+      <select id="fTrimestre" onchange="render()"><option value="">Trimestre</option><option>1</option><option>2</option><option>3</option><option>4</option></select>
+      <input type="date" id="fFechaDesde" onchange="render()" title="Fecha desde" style="width:140px">
+      <input type="date" id="fFechaHasta" onchange="render()" title="Fecha hasta" style="width:140px">
+      <button class="btn sm" onclick="limpiarFiltros()">✕ Limpiar filtros</button>
+      <div style="flex:1"></div>
+      <button class="btn success sm" onclick="exportarExcel()">⬇ Exportar Excel</button>
+    </div>
+
     <div class="tbl-wrap" id="tblWrap"><div class="loading">Conectando con la base de datos...</div></div>
     <div class="status-bar" id="statusBar"></div>
   </div>
@@ -121,7 +140,6 @@
 
 <div class="toast" id="toast"></div>
 
-<!-- Firebase -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import {
@@ -152,7 +170,6 @@ let tab='elaboracion';
 let editId=null;
 let elab=[], activos=[];
 
-// Realtime listeners
 onSnapshot(collection(db,'elaboracion'), snap=>{
   elab=snap.docs.map(d=>({id:d.id,...d.data()}));
   if(tab==='elaboracion'){populateFiltros();render();}
@@ -174,24 +191,35 @@ function setSyncStatus(msg){
 function showToast(msg){
   const t=document.getElementById('toast');
   t.textContent=msg;t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'),2500);
+  setTimeout(()=>t.classList.remove('show'),3000);
 }
 
 function fmt(n){
-  const v=parseFloat(String(n||'0').replace(/,/g,''));
+  const v=parseFloat(String(n||'0').replace(/[$,]/g,''));
   if(isNaN(v)||v===0) return '—';
   return 'RD$ '+v.toLocaleString('es-DO',{minimumFractionDigits:2,maximumFractionDigits:2});
 }
 
+function parseDate(str){
+  if(!str) return null;
+  const parts=str.split('/');
+  if(parts.length===3) return new Date(parts[2],parts[1]-1,parts[0]);
+  return new Date(str);
+}
+
 function semClass(est,tipo){
   if(tipo==='elaboracion'){
-    return est==='EN ELABORACION'?'dot-g':(est==='DEVUELTO'||est==='DESIERTO'?'dot-r':'dot-g');
+    if(est==='EN ELABORACION') return 'dot-g';
+    if(est==='PUBLICADO') return 'dot-b';
+    if(est==='DEVUELTO'||est==='DESIERTO') return 'dot-r';
+    return 'dot-g';
   }
   return (est==='ADJUDICADO'||est==='EN EJECUCION')?'dot-v':'dot-g';
 }
 
 function badgeElab(est){
-  return est==='EN ELABORACION'?'be':est==='DEVUELTO'?'bd':'bds';
+  const m={'EN ELABORACION':'be','DEVUELTO':'bd','DESIERTO':'bds','PUBLICADO':'bpub'};
+  return m[est]||'be';
 }
 function badgeAct(est){
   const m={'EN RECEPCION DE OFERTAS':'bro','EVALUACION DE OFERTAS':'bev','ADJUDICADO':'badj','EN EJECUCION':'bej'};
@@ -203,7 +231,7 @@ function renderKPIs(){
   const prob=elab.filter(p=>p.estatus==='DEVUELTO'||p.estatus==='DESIERTO').length;
   const totalA=activos.length;
   const adj=activos.filter(p=>p.estatus==='ADJUDICADO').length;
-  const monto=[...elab,...activos].reduce((s,p)=>s+parseFloat(String(p.monto||'0').replace(/,/g,'')||0),0);
+  const monto=[...elab,...activos].reduce((s,p)=>s+parseFloat(String(p.monto||'0').replace(/[$,]/g,'')||0),0);
   document.getElementById('kpis').innerHTML=`
     <div class="kpi"><div class="kpi-label">En elaboración</div><div class="kpi-val g">${enElab}</div></div>
     <div class="kpi"><div class="kpi-label">Dev. / Desierto</div><div class="kpi-val r">${prob}</div></div>
@@ -218,10 +246,19 @@ function filtered(){
   const fA=document.getElementById('fAnalista').value;
   const fV=document.getElementById('fVice').value;
   const fE=document.getElementById('fEstatus').value;
+  const fT=document.getElementById('fTipo').value;
+  const fTr=document.getElementById('fTrimestre').value;
+  const fDesde=document.getElementById('fFechaDesde').value;
+  const fHasta=document.getElementById('fFechaHasta').value;
   const datos=tab==='elaboracion'?elab:activos;
   return datos.filter(p=>{
     const txt=(p.oficio+' '+p.nombre+' '+(p.area||'')).toLowerCase();
-    return(!q||txt.includes(q))&&(!fA||p.analista===fA)&&(!fV||p.vice===fV)&&(!fE||p.estatus===fE);
+    const fecha=parseDate(p.fechaRecibido);
+    const desdeOk=!fDesde||!fecha||(fecha>=new Date(fDesde));
+    const hastaOk=!fHasta||!fecha||(fecha<=new Date(fHasta));
+    return(!q||txt.includes(q))&&(!fA||p.analista===fA)&&(!fV||p.vice===fV)&&
+      (!fE||p.estatus===fE)&&(!fT||p.tipoCompra===fT)&&(!fTr||p.trimestre===fTr)&&
+      desdeOk&&hastaOk;
   });
 }
 
@@ -237,6 +274,45 @@ function populateFiltros(){
   fA.innerHTML='<option value="">Todos los analistas</option>'+analistas.map(a=>`<option value="${a}"${a===sA?' selected':''}>${a}</option>`).join('');
   fV.innerHTML='<option value="">Todos los viceministerios</option>'+vices.map(v=>`<option value="${v}"${v===sV?' selected':''}>${v}</option>`).join('');
   fE.innerHTML='<option value="">Todos los estatus</option>'+estatus.map(e=>`<option value="${e}"${e===sE?' selected':''}>${e}</option>`).join('');
+}
+
+window.limpiarFiltros=function(){
+  ['buscar','fFechaDesde','fFechaHasta'].forEach(id=>document.getElementById(id).value='');
+  ['fAnalista','fVice','fEstatus','fTipo','fTrimestre'].forEach(id=>document.getElementById(id).selectedIndex=0);
+  render();
+}
+
+window.exportarExcel=function(){
+  const rows=filtered();
+  if(!rows.length){showToast('No hay datos para exportar');return;}
+  let data;
+  if(tab==='elaboracion'){
+    data=rows.map(p=>({
+      'Oficio':p.oficio||'','Fecha Recibido':p.fechaRecibido||'',
+      'Viceministerio':p.vice||'','Área Requirente':p.area||'',
+      'Analista':p.analista||'','Referencia':p.referencia||'',
+      'Nombre del Proceso':p.nombre||'','Monto Estimado RD$':p.monto||'',
+      'Estatus':p.estatus||'','MIPYME':p.mipyme||'',
+      'Trimestre':p.trimestre||'','Tipo de Compra':p.tipoCompra||'',
+      'Observaciones':p.obs||''
+    }));
+  } else {
+    data=rows.map(p=>({
+      'Oficio':p.oficio||'','Fecha Recibido':p.fechaRecibido||'',
+      'Viceministerio':p.vice||'','Área Requirente':p.area||'',
+      'Analista':p.analista||'','Referencia':p.referencia||'',
+      'Nombre del Proceso':p.nombre||'','Fecha Publicación':p.fechaPub||'',
+      'Modalidad':p.modalidad||'','Monto Estimado RD$':p.monto||'',
+      'Estatus':p.estatus||'','Proveedores':(p.proveedores||[]).join(', '),
+      'Contrato':p.contrato||'','Inicio Contrato':p.inicioContrato||'',
+      'Fin Contrato':p.finContrato||'','Observaciones':p.obs||''
+    }));
+  }
+  const ws=XLSX.utils.json_to_sheet(data);
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,tab==='elaboracion'?'Elaboracion':'Activos');
+  XLSX.writeFile(wb,`procesos_${tab}_${new Date().toISOString().slice(0,10)}.xlsx`);
+  showToast('Excel exportado ✓');
 }
 
 window.render=function(){
@@ -337,11 +413,17 @@ window.addProv=function(){
   const idx=list.children.length;
   const d=document.createElement('div');
   d.className='prov-entry';d.id='pe'+idx;
-  d.innerHTML=`<input placeholder="Nombre del proveedor" style="flex:1;font-size:12px;padding:7px 10px;border-radius:7px;border:1px solid #ddd">
+  d.innerHTML=`<input placeholder="Nombre del proveedor">
     <button class="btn sm danger" onclick="removeProv(${idx})" type="button">✕</button>`;
   list.appendChild(d);
 }
 window.removeProv=function(i){const el=document.getElementById('pe'+i);if(el)el.remove();}
+
+window.onEstatusChange=function(){
+  const est=document.getElementById('fEstatus2').value;
+  const alert=document.getElementById('pubAlert');
+  if(alert) alert.style.display=est==='PUBLICADO'?'block':'none';
+}
 
 function getProveedores(){
   const list=document.getElementById('provList');
@@ -354,7 +436,7 @@ function buildForm(p){
   const provs=(p&&p.proveedores&&p.proveedores.length)?p.proveedores:[''];
   const provHTML=`<div id="provList">${provs.map((pv,i)=>`
     <div class="prov-entry" id="pe${i}">
-      <input value="${pv}" placeholder="Nombre del proveedor" style="flex:1;font-size:12px;padding:7px 10px;border-radius:7px;border:1px solid #ddd">
+      <input value="${pv}" placeholder="Nombre del proveedor">
       <button class="btn sm danger" onclick="removeProv(${i})" type="button">✕</button>
     </div>`).join('')}</div>
   <button class="btn sm" onclick="addProv()" type="button" style="margin-top:5px">+ Agregar proveedor</button>`;
@@ -370,7 +452,7 @@ function buildForm(p){
     <div class="fg"><label>Monto estimado (RD$)</label><input id="fMonto" type="number" value="${(p&&p.monto)||''}"></div>
     <div class="fg"><label>MIPYME</label><input id="fMipyme" value="${(p&&p.mipyme)||''}"></div>
     <div class="fg"><label>Trimestre</label>
-      <select id="fTrimestre"><option value="">—</option>${['1','2','3','4'].map(t=>`<option${p&&p.trimestre===t?' selected':''}>${t}</option>`).join('')}</select>
+      <select id="fTrimestre2"><option value="">—</option>${['1','2','3','4'].map(t=>`<option${p&&p.trimestre===t?' selected':''}>${t}</option>`).join('')}</select>
     </div>
     ${isAct?`
     <div class="sec-hdr">Publicación y adjudicación</div>
@@ -382,8 +464,15 @@ function buildForm(p){
     <div class="fg"><label>Fin de contrato</label><input id="fFinC" value="${(p&&p.finContrato)||''}"></div>
     <div class="fg full"><label>Proveedores adjudicados</label>${provHTML}</div>
     `:`
-    <div class="fg"><label>Estatus</label><select id="fEstatus2">${ESTATUS_ELAB.map(e=>`<option${p&&p.estatus===e?' selected':''}>${e}</option>`).join('')}</select></div>
-    <div class="fg"><label>Tipo de compra</label><select id="fTipo">${TIPOS_COMPRA.map(t=>`<option${p&&p.tipoCompra===t?' selected':''}>${t}</option>`).join('')}</select></div>
+    <div class="fg"><label>Estatus</label>
+      <select id="fEstatus2" onchange="onEstatusChange()">
+        ${ESTATUS_ELAB.map(e=>`<option${p&&p.estatus===e?' selected':''}>${e}</option>`).join('')}
+      </select>
+    </div>
+    <div class="fg"><label>Tipo de compra</label><select id="fTipo2">${TIPOS_COMPRA.map(t=>`<option${p&&p.tipoCompra===t?' selected':''}>${t}</option>`).join('')}</select></div>
+    <div class="pub-alert full" id="pubAlert" style="${p&&p.estatus==='PUBLICADO'?'display:block':'display:none'}">
+      ✅ Al guardar, este proceso se moverá automáticamente a <strong>Procesos Activos</strong>.
+    </div>
     `}
     <div class="fg full"><label>Observaciones</label><textarea id="fObs">${(p&&p.obs)||''}</textarea></div>
   `;
@@ -395,7 +484,10 @@ window.saveProc=async function(){
   const isAct=tab==='activos';
   const oficio=document.getElementById('fOficio').value.trim();
   const nombre=document.getElementById('fNombre').value.trim();
-  if(!oficio||!nombre){alert('El oficio y el nombre del proceso son requeridos.');btn.disabled=false;btn.textContent='Guardar proceso';return;}
+  if(!oficio||!nombre){
+    alert('El oficio y el nombre del proceso son requeridos.');
+    btn.disabled=false;btn.textContent='Guardar proceso';return;
+  }
 
   const base={
     oficio,nombre,
@@ -406,7 +498,7 @@ window.saveProc=async function(){
     referencia:document.getElementById('fRef').value.trim(),
     monto:document.getElementById('fMonto').value||'0',
     mipyme:document.getElementById('fMipyme').value.trim(),
-    trimestre:document.getElementById('fTrimestre').value,
+    trimestre:document.getElementById('fTrimestre2').value,
     estatus:document.getElementById('fEstatus2').value,
     obs:document.getElementById('fObs').value.trim(),
     updatedAt:serverTimestamp()
@@ -424,31 +516,35 @@ window.saveProc=async function(){
       };
       if(editId) await updateDoc(doc(db,'activos',editId),datos);
       else await addDoc(collection(db,'activos'),{...datos,createdAt:serverTimestamp()});
+      closeModal();
+      showToast(editId?'Proceso actualizado ✓':'Proceso creado ✓');
     } else {
-      const datos={...base,tipoCompra:document.getElementById('fTipo').value};
+      const datos={...base,tipoCompra:document.getElementById('fTipo2').value};
       if(datos.estatus==='PUBLICADO'){
-        // Mover a activos automáticamente
-        const datosActivo={...datos,
+        // Mover automáticamente a activos
+        const datosActivo={
+          ...datos,
           modalidad:'',fechaPub:'',contrato:'NO',
           inicioContrato:'',finContrato:'',proveedores:[],
-          movidoDeElaboracion:true,createdAt:serverTimestamp()
+          createdAt:serverTimestamp()
         };
         await addDoc(collection(db,'activos'),datosActivo);
         if(editId) await deleteDoc(doc(db,'elaboracion',editId));
-        showToast('Proceso publicado y movido a Activos ✓');
+        closeModal();
+        showToast('✅ Proceso publicado y movido a Procesos Activos');
       } else {
         if(editId) await updateDoc(doc(db,'elaboracion',editId),datos);
         else await addDoc(collection(db,'elaboracion'),{...datos,createdAt:serverTimestamp()});
+        closeModal();
+        showToast(editId?'Proceso actualizado ✓':'Proceso creado ✓');
       }
     }
-    closeModal();
-    showToast(editId?'Proceso actualizado ✓':'Proceso creado ✓');
   }catch(e){
     alert('Error al guardar: '+e.message);
+    btn.disabled=false;btn.textContent='Guardar proceso';
   }
   btn.disabled=false;btn.textContent='Guardar proceso';
 }
-
 </script>
 </body>
 </html>
